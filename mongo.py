@@ -72,21 +72,14 @@ def insert_nor_sus(_coll, key, _dict ):
                                 "COUNT":_dict["COUNT"], \
                             })
 
-def update_nor_sus(_coll, key, _dict, _doc, domain_flag, nor_flag):
-    tmp_flag = domain_flag and nor_flag and is_in_set(nor_ip_domain_set, key, True)
-
+def update_nor_sus(_coll, key, _dict, _doc):
     if _doc == None:
         insert_nor_sus(_coll, key, _dict)
-        if tmp_flag:
-            for ip in _dict["ITEMS"]:
-                nor_ip_set.add(ip)
     else:
         new_item_list = []
-
         for item in _dict["ITEMS"]:
             if item not in _doc["ITEMS"]:
                 new_item_list.append(item)
-                if tmp_flag: nor_ip_set.add(item)
         if len(new_item_list) > 0:
             _coll.update({"_id":key},{"$push":{"ITEMS":{"$each":new_item_list}}})
         new_ttl_list = []
@@ -101,12 +94,11 @@ def update_nor_sus(_coll, key, _dict, _doc, domain_flag, nor_flag):
             _coll.update({"_id":key}, {"$set":{"LAST_SEEN":_dict["LAST_SEEN"]}})
         _coll.update({"_id":key}, {"$set":{"COUNT":_doc["COUNT"]+_dict["COUNT"]}})
 
-def is_in_set(nor_set, key, domain_flag):
-    if domain_flag:
-        key_array = key.split('.')
-        l = len(key_array)
-        if l < 2: return False
-        key = key_array[l-2] + "." + key_array[l-1] 
+def is_in_set(nor_set, key):
+    key_array = key.split('.')
+    l = len(key_array)
+    if l < 2: return False
+    key = key_array[l-2] + "." + key_array[l-1] 
     if key in nor_set: return True
     return False
 
@@ -171,11 +163,11 @@ def dump_dict(_coll, nor_coll, sus_coll, nor_set, sus_set, _dict, domain_flag):
         if key1 in sus_set:
             new_sus_dict = transform_dict(_dict[key1])
             sus_doc = sus_coll.find_one({"_id":key1})
-            update_nor_sus(sus_coll, key1, new_sus_dict, sus_doc, domain_flag, False)
-        elif is_in_set(nor_set, key1, domain_flag):
+            update_nor_sus(sus_coll, key1, new_sus_dict, sus_doc)
+        elif domain_flag and is_in_set(nor_set, key1):
             new_nor_dict = transform_dict(_dict[key1])
             nor_doc = nor_coll.find_one({"_id":key1})
-            update_nor_sus(nor_coll, key1, new_nor_dict, nor_doc, domain_flag, True)
+            update_nor_sus(nor_coll, key1, new_nor_dict, nor_doc)
         else:
             _doc = _coll.find_one({"_id":key1})
             if _doc == None:
@@ -208,10 +200,8 @@ sus_ip_set = Set([])
 sus_domain_set = Set([])
 
 nor_ip_set = Set([])
-nor_ip_domain_set = Set([])
 nor_domain_set = Set([])
 init_nor_domain_set("domain_whitelist.txt", nor_domain_set) 
-init_nor_domain_set("ip_whitelist.txt", nor_ip_domain_set)
 
 root = "/dnscap-data1/dnslog/"
 
@@ -228,7 +218,6 @@ for root, dirs, files in os.walk(root):
 for f in file_list:
     init_set(db.sus_ip, sus_ip_set) 
     init_set(db.sus_domain, sus_domain_set) 
-    init_set(db.nor_ip, nor_ip_set)
 
     mongo_print(f)  
     mongo_print(datetime.now())

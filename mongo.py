@@ -29,7 +29,7 @@ def load_one_line(_dict, key1, key2, _list):
         if _dict[key1][key2]["LAST_SEEN"] < float(_list[0]): _dict[key1][key2]["LAST_SEEN"] = float(_list[0])
         _dict[key1][key2]["COUNT"] = _dict[key1][key2]["COUNT"] + int(_list[8])
 
-def generate_sus_dict(_dict, content):
+def generate_dict(_dict, content):
     sus_dict = {}
     sus_dict[content] = Set([])
     sus_dict["TTLS"] = Set([])
@@ -46,37 +46,55 @@ def generate_sus_dict(_dict, content):
         sus_dict["COUNT"] = sus_dict["COUNT"] + _dict[key]["COUNT"]
     return sus_dict
 
-def merge_sus_dict(_dict, sus_doc, content):
-    for item in sus_doc[content]:
+def merge_dict(_dict, _doc, content):
+    if _doc == None: return
+
+    for item in _doc[content]:
         _dict[content].add(item)
-    for ttl in sus_doc["TTLS"]:
+    for ttl in _doc["TTLS"]:
         _dict["TTLS"].add(ttl)
-    if sus_doc["FIRST_SEEN"] <  _dict["FIRST_SEEN"]: _dict["FIRST_SEEN"] = sus_doc["FIRST_SEEN"]
-    if sus_doc["LAST_SEEN"] > _dict["LAST_SEEN"]: _dict["LAST_SEEN"] = sus_doc["LAST_SEEN"] 
-    _dict["COUNT"] = _dict["COUNT"] + sus_doc["COUNT"]
-        
+    if _doc["FIRST_SEEN"] <  _dict["FIRST_SEEN"]: _dict["FIRST_SEEN"] = _doc["FIRST_SEEN"]
+    if _doc["LAST_SEEN"] > _dict["LAST_SEEN"]: _dict["LAST_SEEN"] = _doc["LAST_SEEN"] 
+    _dict["COUNT"] = _dict["COUNT"] + _doc["COUNT"]
 
-def dump_dict(nor_coll, sus_coll, _dict, content): 
+def update_coll(_coll, key, _dict, content):
+    _coll.update({"_id":key}, {"$set":{content:list(_dict[content]), "TTLS":list(_dict["TTLS"]), \
+                                    "FIRST_SEEN":_dict["FIRST_SEEN"], "LAST_SEEN":_dict["LAST_SEEN"], \
+                                    "COUNT":_dict["COUNT"] \
+                                    }}, True)
+
+def insert_coll(_coll, key, _dict, content):
+    _coll.insert({"_id":key, content:list(_dict[content]), "TTLS":list(_dict["TTLS"]), \
+                                    "FIRST_SEEN":_dict["FIRST_SEEN"], "LAST_SEEN":_dict["LAST_SEEN"], \
+                                    "COUNT":_dict["COUNT"], \
+                                })
+
+def is_in_nor_set(nor_set, key):
+    for item in nor_set:
+        if key.endswith(item):
+            return True
+    return False
+
+def dump_dict(_coll, nor_coll, sus_coll, nor_set, sus_set, _dict, content): 
     for key1 in _dict:
-        sus_doc = sus_coll.find_one({"_id":key1})
-        if sus_doc != None:
-            new_sus_dict = generate_sus_dict(_dict[key1], content)
-            merge_sus_dict(new_sus_dict, sus_doc, content)
-
-            sus_coll.update({"_id":key1}, {"$set":{content:list(new_sus_dict[content]), \
-                                                "TTLS":list(new_sus_dict["TTLS"]), \
-                                                "FIRST_SEEN":new_sus_dict["FIRST_SEEN"], \
-                                                "LAST_SEEN":new_sus_dict["LAST_SEEN"], \
-                                                "COUNT":new_sus_dict["COUNT"] \
-                                                }})
-        else:
+        if key1 in sus_set:
+            new_sus_dict = generate_dict(_dict[key1], content)
+            sus_doc = sus_coll.find_one({"_id":key1})
+            merge_dict(new_sus_dict, sus_doc, content)
+            update_coll(sus_coll, key1, new_sus_dict, content)
+        elif is_in_nor_set(nor_set, key1):
+            new_nor_dict = generate_dict(_dict[key1], content)
             nor_doc = nor_coll.find_one({"_id":key1})
-            if nor_doc == None:
+            merge_dict(new_nor_dict, nor_doc, content) 
+            update_coll(nor_coll, key1, new_nor_dict, content)
+        else:
+            _doc = _coll.find_one({"_id":key1})
+            if _doc == None:
                 for key2 in _dict[key1]:
                     _dict[key1][key2]["TTLS"] = list(_dict[key1][key2]["TTLS"])
-                nor_coll.insert({"_id":key1, content:json.dumps(_dict[key1])})
+                _coll.insert({"_id":key1, content:json.dumps(_dict[key1])})
             else:
-                mongo_dict = json.loads(nor_doc[content])
+                mongo_dict = json.loads(_doc[content])
                 for key2 in mongo_dict:
                     if key2 not in _dict[key1]:
                         _dict[key1][key2] = mongo_dict[key2]
@@ -90,29 +108,43 @@ def dump_dict(nor_coll, sus_coll, _dict, content):
                         _dict[key1][key2]["COUNT"] = _dict[key1][key2]["COUNT"] + mongo_dict[key2]["COUNT"]
 
                 if len(_dict[key1]) > 200:
-                    new_sus_dict = generate_sus_dict(_dict[key1], content)
-
-                    sus_coll.insert({"_id":key1, content:list(new_sus_dict[content]), \
-                                                "TTLS":list(new_sus_dict["TTLS"]), \
-                                                "FIRST_SEEN":new_sus_dict["FIRST_SEEN"], \
-                                                "LAST_SEEN":new_sus_dict["LAST_SEEN"], \
-                                                "COUNT":new_sus_dict["COUNT"], \
-                                                })
-                    nor_coll.remove({"_id":key1})
+                    new_sus_dict = generate_dict(_dict[key1], content)
+                    insert_coll(sus_coll, key1, new_sus_dict, content)
+                    sus_set.add(key1)
+                    _coll.remove({"_id":key1})
                 else:
                     for key2 in _dict[key1]:
                         _dict[key1][key2]["TTLS"] = list(_dict[key1][key2]["TTLS"])
-                    nor_coll.update({"_id":key1}, {"$set":{content:json.dumps(_dict[key1])}})
+                    _coll.update({"_id":key1}, {"$set":{content:json.dumps(_dict[key1])}})
 
+def init_sus_set(coll, sus_set):
+    cursor = coll.find({},{"_id":1})
+    for item in cursor:
+        sus_set.add(item["_id"])
+
+def init_nor_set(f, nor_set):
+    for line in open(f):
+        nor_set.add(line.strip('\n'))
+
+
+#--------------Main-----------------#
 p = re.compile("^\d{4}\-\d{2}\-\d{2}$")
 client = MongoClient()
 db = client.passiveDNS
-domain_dict = {}
-ip_dict = {}
+
 file_list = []
+ip_dict = {}
+domain_dict = {}
+
 sus_ip_set = Set([])
+init_sus_set(db.sus_ip, sus_ip_set) 
 sus_domain_set = Set([])
+init_sus_set(db.sus_domain, sus_domain_set) 
+
+nor_ip_set = Set([])
 nor_domain_set = Set([])
+init_nor_set("domain_whitelist.txt", nor_domain_set) 
+
 root = "/dnscap-data1/dnslog/"
 
 for root, dirs, files in os.walk(root): 
@@ -120,11 +152,12 @@ for root, dirs, files in os.walk(root):
     for f in files:
         if not p.match(f):continue 
         this_date = datetime.strptime(f,"%Y-%m-%d").date() 
-        if this_date > date(2013,9,13) and this_date < date(2013,10,1):
+        if this_date > date(2013,9,13) and this_date < date(2013, 10, 1):
             file_list.append(f)
 
 for f in file_list:
-    mongo_print([f, datetime.now()])
+    mongo_print(f)  
+    mongo_print(datetime.now())
 
     bar1 = time.clock()
     number = 0
@@ -139,18 +172,21 @@ for f in file_list:
         load_one_line(domain_dict, domain, ip, line_array)
         load_one_line(ip_dict, ip, domain, line_array)
         
-    print (time.clock() - bar1) / number     
-    mongo_print([len(domain_dict), len(ip_dict), number, datetime.now()])
+    mongo_print((time.clock() - bar1) / number)     
+    mongo_print([len(domain_dict), len(ip_dict), number])
+    mongo_print(datetime.now())
 
     bar2 = time.clock()
-    dump_dict(db.domain, db.sus_domain, domain_dict, "IPS")
-    print (time.clock() - bar2) / len(domain_dict)  
+    dump_dict(db.domain, db.nor_domain, db.sus_domain, nor_domain_set, sus_domain_set, domain_dict, "IPS")
+    mongo_print((time.clock() - bar2) / len(domain_dict))  
+    mongo_print(datetime.now())
     domain_dict.clear()
 
+
     bar3 = time.clock()
-    dump_dict(db.ip, db.sus_ip, ip_dict, "DOMAINS") 
-    print(time.clock() - bar3) / len(ip_dict)
+    dump_dict(db.ip, db.nor_ip, db.sus_ip, nor_ip_set, sus_ip_set, ip_dict, "DOMAINS") 
+    mongo_print((time.clock() - bar3) / len(ip_dict))
+    mongo_print(str(datetime.now()) + "\n")
     ip_dict.clear()
 
-    mongo_print([datetime.now()])
 

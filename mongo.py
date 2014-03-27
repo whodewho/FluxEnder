@@ -53,9 +53,9 @@ def dump_ip_dict(coll, nor_coll, sus_coll, nor_set, sus_set, \
 #--------------Main-----------------#
 root = "/dnscap-data1/dnslog/"
 p = re.compile("^\d{4}\-\d{2}\-\d{2}$")
-start_date_str = "140219"
+start_date_str = "140315"
 start_date = datetime.strptime(start_date_str, "%y%m%d")
-end_date = start_date + timedelta(days = 7)
+end_date = start_date + timedelta(days = 2)
 
 client = MongoClient()
 db = client["p"+start_date_str]
@@ -86,6 +86,7 @@ for root, dirs, files in os.walk(root):
         if this_date >= start_date.date() and this_date < end_date.date():
             file_list.append(f)
 
+
 for f in file_list:
     init_set(db.sus_ip, sus_ip_set) 
     init_set(db.sus_domain, sus_domain_set) 
@@ -103,6 +104,13 @@ for f in file_list:
         if len(line_array) != 9 or line_array[5] != 'A' : continue
         
         domain = (line_array[4][:len(line_array[4])-1]).lower()
+        ext = tldextract.extract(domain)
+        if ext.domain == "":
+            domain = ext.suffix
+        else:
+            domain = ".".join(ext[1:])
+        #print domain
+
         ip = line_array[6]
         load_one_line(domain_dict, domain, ip, line_array)
         load_one_line(ip_dict, ip, domain, line_array)

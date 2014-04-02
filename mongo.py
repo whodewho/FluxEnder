@@ -7,14 +7,13 @@ import os
 import time
 import tldextract
 
+
 script, start_date_str, day_gap = argv
 #--------------Main-----------------#
 root = "/home/kai/Workspace/graduation/dnscap-data1/dnslog/"
 p = re.compile("^\d{4}\-\d{2}\-\d{2}$")
-#start_date_str = "140318"
-#day_gap = 3
-start_date = datetime.strptime(start_date_str, "%y%m%d")
-end_date = start_date + timedelta(days=int(day_gap))
+start_datetime = datetime.strptime(start_date_str, "%y%m%d")
+end_datetime = start_datetime + timedelta(days=int(day_gap))
 
 client = MongoClient()
 db = client["p"+start_date_str]
@@ -29,6 +28,8 @@ nor_domain_set = set([])
 init_domain_set("domain_whitelist.txt", nor_domain_set) 
 exclude_domain_set = set([])
 init_domain_set("domain_exclude.txt", exclude_domain_set)
+black_domain_set = set([])
+init_domain_set("justdomains", black_domain_set)
 
 domain_cache = init_cache()
 ip_cache = init_cache()
@@ -45,7 +46,7 @@ for root, dirs, files in os.walk(root):
         if not p.match(f):
             continue
         this_date = datetime.strptime(f, "%Y-%m-%d").date()
-        if start_date.date() <= this_date < end_date.date():
+        if start_datetime.date() <= this_date < end_datetime.date():
             file_list.append(f)
 
 for f in file_list:
@@ -72,7 +73,7 @@ for f in file_list:
             domain = ext.suffix
         else:
             domain = ".".join(ext[1:])
-        if domain == "" or domain in exclude_domain_set:
+        if domain == "" or domain not in exclude_domain_set:
             continue
 
         timestamp = float(line_array[0])

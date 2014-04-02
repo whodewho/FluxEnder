@@ -73,12 +73,14 @@ def update_nor_sus(key, _dict, doc, nor_sus_cache):
         nor_sus_cache["UPDATE"][key] = update_dict
         #coll.update({"_id":key}, update_dict)
 
+
 def update(_dict, doc, key, sus_set, cache, sus_cache):
     sus_threshold = 20
     if doc is None:
         if len(_dict["ITEMS"]) > sus_threshold:
             sus_cache["INSERT"][key] = _dict
-        else: cache["INSERT"][key] = _dict
+        else:
+            cache["INSERT"][key] = _dict
     else:
         update_dict = {}
         di_set = set(_dict["ITEMS"])

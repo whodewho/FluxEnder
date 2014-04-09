@@ -1,3 +1,8 @@
+import pandas as pd
+import tldextract
+import csv
+from urlparse import urlparse
+
 
 def init_set(coll, _set):
     cursor = coll.find({}, {"_id": 1})
@@ -5,9 +10,24 @@ def init_set(coll, _set):
         _set.add(item["_id"])
 
 
-def init_domain_set(f, nor_domain_set):
+def init_domain_set(f, domain_set):
     for line in open(f):
-        nor_domain_set.add(line.strip('\n'))
+        ext = tldextract.extract(line.strip())
+        domain_set.add(".".join(ext[1:]))
+
+
+def init_from_phishtank(domain_set):
+    with open('hosts_phishtank.csv', 'rb') as csvfile:
+        reader = csv.reader(csvfile)
+        for row in reader:
+            ext = tldextract.extract(urlparse(row[1]).netloc)
+            #print ".".join(ext[1:])
+            domain_set.add(".".join(ext[1:]))
+
+
+def init_from_alexa(begin=1, end=10000):
+    df = pd.read_csv('top-1m.csv', names=['rank', 'domain'], header=None, encoding='utf-8')
+    return set(list(df[(df['rank'] <= end) & (df['rank'] >= begin)]['domain']))
 
 
 def mongo_print(args):

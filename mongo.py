@@ -7,7 +7,6 @@ import os
 import time
 import tldextract
 
-
 script, start_date_str, day_gap = argv
 #--------------Main-----------------#
 root = "/home/kai/Workspace/graduation/dnscap-data1/dnslog/"
@@ -22,14 +21,16 @@ file_list = []
 ip_dict = {}
 domain_dict = {}
 sus_ip_set = set([])
+nor_ip_set = set([])
+nor_domain_set = init_from_alexa(1, 100000)
+init_domain_set("domain_whitelist.txt", nor_domain_set)
 sus_domain_set = set([])
-nor_ip_set = set([]) 
-nor_domain_set = set([])
-init_domain_set("domain_whitelist.txt", nor_domain_set) 
-exclude_domain_set = set([])
-init_domain_set("domain_exclude.txt", exclude_domain_set)
-black_domain_set = set([])
-init_domain_set("justdomains", black_domain_set)
+init_domain_set("hosts_stdZeuS.txt", sus_domain_set)
+init_domain_set("hosts_hphosts.txt", sus_domain_set)
+init_domain_set("hosts_malwaredomainlist.txt", sus_domain_set)
+init_domain_set("hosts_malwaredomains.txt", sus_domain_set)
+init_from_phishtank(sus_domain_set)
+
 
 domain_cache = init_cache()
 ip_cache = init_cache()
@@ -50,11 +51,7 @@ for root, dirs, files in os.walk(root):
             file_list.append(f)
 
 for f in file_list:
-    init_set(db.sus_ip, sus_ip_set) 
-    init_set(db.sus_domain, sus_domain_set) 
-    init_set(db.nor_ip, nor_ip_set)
-
-    mongo_print(f)  
+    mongo_print(f)
     mongo_print(datetime.now())
 
     bar1 = time.clock()
@@ -73,7 +70,10 @@ for f in file_list:
             domain = ext.suffix
         else:
             domain = ".".join(ext[1:])
-        if domain == "" or domain not in exclude_domain_set:
+
+        if domain in sus_domain_set and domain in nor_domain_set:
+            continue
+        if domain == "" or domain not in sus_domain_set and domain not in nor_domain_set:
             continue
 
         timestamp = float(line_array[0])
@@ -89,14 +89,22 @@ for f in file_list:
     mongo_print(datetime.now())
 
     bar2 = time.clock()
-    dump_domain_dict(db.domain, db.nor_domain, db.sus_domain, nor_domain_set, sus_domain_set, domain_dict,
-                     domain_cache, nor_domain_cache, sus_domain_cache, nor_ip_set)
+    dump_domain_dict(db.domain, db.nor_domain, db.sus_domain,
+                     nor_domain_set, sus_domain_set,
+                     domain_dict,
+                     domain_cache, nor_domain_cache, sus_domain_cache,
+                     nor_ip_set, sus_ip_set)
     mongo_print((time.clock() - bar2) / len(domain_dict))  
     mongo_print(datetime.now())
     domain_dict.clear()
 
+    print len(nor_ip_set)
+    print len(sus_ip_set)
+
     bar3 = time.clock()
-    dump_ip_dict(db.ip, db.nor_ip, db.sus_ip, nor_ip_set, sus_ip_set, ip_dict,
+    dump_ip_dict(db.ip, db.nor_ip, db.sus_ip,
+                 nor_ip_set, sus_ip_set,
+                 ip_dict,
                  ip_cache, nor_ip_cache, sus_ip_cache)
     mongo_print((time.clock() - bar3) / len(ip_dict))
     mongo_print(str(datetime.now()) + "\n")

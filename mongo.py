@@ -22,14 +22,15 @@ ip_dict = {}
 domain_dict = {}
 sus_ip_set = set([])
 nor_ip_set = set([])
-nor_domain_set = init_from_alexa(1, 100000)
-init_domain_set("domain_whitelist.txt", nor_domain_set)
+nor_domain_set = init_from_alexa(10000, 15000)
+#init_domain_set("domain_whitelist.txt", nor_domain_set)
 sus_domain_set = set([])
-init_domain_set("hosts_stdZeuS.txt", sus_domain_set)
+init_domain_set("hosts_badZeuS.txt", sus_domain_set)
 init_domain_set("hosts_hphosts.txt", sus_domain_set)
 init_domain_set("hosts_malwaredomainlist.txt", sus_domain_set)
 init_domain_set("hosts_malwaredomains.txt", sus_domain_set)
 init_from_phishtank(sus_domain_set)
+init_domain_set("hosts_CyberCrime.txt", sus_domain_set)
 
 
 domain_cache = init_cache()

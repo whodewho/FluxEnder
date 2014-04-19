@@ -22,15 +22,21 @@ ip_dict = {}
 domain_dict = {}
 sus_ip_set = set([])
 nor_ip_set = set([])
-nor_domain_set = init_from_alexa(10000, 15000)
-#init_domain_set("domain_whitelist.txt", nor_domain_set)
+outlier_domain_set = set([])
+nor_domain_set = init_from_alexa(1, 10000)
+init_domain_set("domain_whitelist.txt", outlier_domain_set)
+init_domain_set("cdn.txt", outlier_domain_set)
+
 sus_domain_set = set([])
-init_domain_set("hosts_badZeuS.txt", sus_domain_set)
-init_domain_set("hosts_hphosts.txt", sus_domain_set)
-init_domain_set("hosts_malwaredomainlist.txt", sus_domain_set)
+init_domain_set("hosts_badzeus.txt", sus_domain_set)
+init_domain_set("hosts_spyeye.txt", sus_domain_set)
+init_domain_set("hosts_palevo.txt", sus_domain_set)
+init_domain_set("hosts_feodo.txt", sus_domain_set)
+init_domain_set("hosts_cybercrime.txt", sus_domain_set)
 init_domain_set("hosts_malwaredomains.txt", sus_domain_set)
+init_domain_set("hosts_malwaredomainlist.txt", sus_domain_set)
 init_from_phishtank(sus_domain_set)
-init_domain_set("hosts_CyberCrime.txt", sus_domain_set)
+init_domain_set("hosts_hphosts.txt", sus_domain_set)
 
 
 domain_cache = init_cache()
@@ -39,6 +45,8 @@ sus_domain_cache = init_cache()
 sus_ip_cache = init_cache()
 nor_domain_cache = init_cache()
 nor_ip_cache = init_cache()
+spe_domain_cache = init_cache()
+spe_ip_cache = init_cache()
 
 mongo_print("\n\n\n\n\n"+str(os.path.basename(__file__)))
 
@@ -72,9 +80,11 @@ for f in file_list:
         else:
             domain = ".".join(ext[1:])
 
-        if domain in sus_domain_set and domain in nor_domain_set:
+        if domain in outlier_domain_set:
             continue
-        if domain == "" or domain not in sus_domain_set and domain not in nor_domain_set:
+        if domain in nor_domain_set and domain in sus_domain_set:
+            continue
+        if domain not in sus_domain_set and domain not in nor_domain_set:
             continue
 
         timestamp = float(line_array[0])
@@ -90,10 +100,10 @@ for f in file_list:
     mongo_print(datetime.now())
 
     bar2 = time.clock()
-    dump_domain_dict(db.domain, db.nor_domain, db.sus_domain,
+    dump_domain_dict(db.domain, db.nor_domain, db.sus_domain, db.spe_domain,
                      nor_domain_set, sus_domain_set,
                      domain_dict,
-                     domain_cache, nor_domain_cache, sus_domain_cache,
+                     domain_cache, nor_domain_cache, sus_domain_cache, spe_domain_cache,
                      nor_ip_set, sus_ip_set)
     mongo_print((time.clock() - bar2) / len(domain_dict))  
     mongo_print(datetime.now())
@@ -103,10 +113,10 @@ for f in file_list:
     print len(sus_ip_set)
 
     bar3 = time.clock()
-    dump_ip_dict(db.ip, db.nor_ip, db.sus_ip,
+    dump_ip_dict(db.ip, db.nor_ip, db.sus_ip, db.spe_ip,
                  nor_ip_set, sus_ip_set,
                  ip_dict,
-                 ip_cache, nor_ip_cache, sus_ip_cache)
+                 ip_cache, nor_ip_cache, sus_ip_cache, spe_ip_cache)
     mongo_print((time.clock() - bar3) / len(ip_dict))
     mongo_print(str(datetime.now()) + "\n")
     ip_dict.clear()

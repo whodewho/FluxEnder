@@ -21,7 +21,7 @@ sus_ip_set = set([])
 nor_ip_set = set([])
 
 outlier_domain_set = init_outlier_domain_set()
-nor_domain_set = init_from_alexa(1, 10000)
+nor_domain_set = init_from_alexa(5000, 10000)
 sus_domain_set = init_sus_domain_set()
 
 domain_cache = init_cache()

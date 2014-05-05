@@ -9,8 +9,7 @@ this_datetime = datetime.strptime(start_date_str, "%y%m%d")
 end_datetime = datetime.strptime(end_date_str, "%y%m%d")
 while this_datetime < end_datetime:
     db_name = "p" + str(this_datetime.strftime("%y%m%d"))
-
-    #client.drop_database(db_name)
-    for coll_name in coll_name_list:
-       client[db_name][coll_name+"_matrix"].drop()
+    client.drop_database(db_name)
+    # for coll_name in coll_name_list:
+    #    client[db_name][coll_name+"_matrix"].drop()
     this_datetime = datetime.strptime(db_name[1:], "%y%m%d") + timedelta(days=day_gap)

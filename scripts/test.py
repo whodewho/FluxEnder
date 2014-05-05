@@ -211,7 +211,6 @@ def a13():
             if domain in tmp_set:
                 print file_name, line
 
-
 client = MongoClient()
 coll_name_list = ['domain', 'nor_domain', 'sus_domain', 'spe_domain', 'ip', 'nor_ip', 'sus_ip', 'spe_ip']
 

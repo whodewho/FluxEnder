@@ -127,23 +127,22 @@ def a4():
         matrix.append(tmp)
 
     df = pd.DataFrame(matrix, columns=["domain", "class", "number", "ip_growth", "prefix_growth", "subdomain_growth"])
-
-    df.boxplot(['ip_growth', 'prefix_growth'], 'class')
+    df.boxplot(['ip_growth', 'prefix_growth', 'subdomain_growth'], 'class')
     pylab.show()
 
-    df.boxplot('subdomain_growth', 'class')
-    pylab.ylabel('Subdomain Growth')
-    pylab.show()
-
-    df1 = df[df['class'] == 'legit']
-    df2 = df[df['class'] == 'malware']
-
-    plt.scatter(df1['prefix_growth'], df1['subdomain_growth'], s=120, c='#aaaaff', label='Legit', alpha=.2)
-    plt.scatter(df2['prefix_growth'], df2['subdomain_growth'],s=40, c='r', label='Malware', alpha=.3)
-    plt.legend()
-    pylab.xlabel('IP Set Size')
-    pylab.ylabel('Sub Domain Growth')
-    pylab.show()
+    # df.boxplot('subdomain_growth', 'class')
+    # pylab.ylabel('Subdomain Growth')
+    # pylab.show()
+    #
+    # df1 = df[df['class'] == 'legit']
+    # df2 = df[df['class'] == 'malware']
+    #
+    # plt.scatter(df1['prefix_growth'], df1['subdomain_growth'], s=120, c='#aaaaff', label='Legit', alpha=.2)
+    # plt.scatter(df2['prefix_growth'], df2['subdomain_growth'],s=40, c='r', label='Malware', alpha=.3)
+    # plt.legend()
+    # pylab.xlabel('IP Set Size')
+    # pylab.ylabel('Sub Domain Growth')
+    # pylab.show()
 
 
 def a5():
@@ -269,4 +268,4 @@ def init_domain_set(f, domain_set):
 
 client = MongoClient()
 coll_name_list = ['domain', 'nor_domain', 'sus_domain', 'spe_domain', 'ip', 'nor_ip', 'sus_ip', 'spe_ip']
-a7()
+a4()

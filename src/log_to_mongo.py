@@ -21,7 +21,7 @@ sus_ip_set = set([])
 nor_ip_set = set([])
 
 outlier_domain_set = init_outlier_domain_set()
-nor_domain_set = init_from_alexa(5000, 10000)
+nor_domain_set = init_from_alexa(10000, 15000)
 sus_domain_set = init_sus_domain_set()
 
 domain_cache = init_cache()
@@ -71,8 +71,8 @@ for f in file_list:
             continue
         if domain in nor_domain_set and domain in sus_domain_set:
             continue
-        if domain not in sus_domain_set and domain not in nor_domain_set:
-            continue
+        # if domain not in sus_domain_set and domain not in nor_domain_set:
+        #     continue
 
         timestamp = float(line_array[0])
         ip = line_array[6]

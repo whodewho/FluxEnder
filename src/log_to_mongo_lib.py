@@ -36,6 +36,7 @@ def init_outlier_domain_set():
     outlier_domain_set = set([])
     init_domain_set("../resources/domain_whitelist.txt", outlier_domain_set)
     init_domain_set("../resources/cdn.txt", outlier_domain_set)
+    init_domain_set("../resources/cdn_new.txt", outlier_domain_set)
     return outlier_domain_set
 
 

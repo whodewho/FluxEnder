@@ -20,10 +20,15 @@ for root, dirs, files in os.walk(dns_log_path):
             file_list.append(f)
 print file_list
 
-cdn_domain_set = init_from_alexa(1, 1000)
+# cdn_domain_set = init_from_alexa(1, 50)
+cdn_domain_set = set([])
 init_domain_set("../resources/cdn.txt", cdn_domain_set)
+init_domain_set("../resources/domain_whitelist.txt", cdn_domain_set)
+
+
 cdn_ip_set = set([])
 new_cdn_domain = set([])
+print cdn_domain_set
 
 for f in file_list:
     for line in open(os.path.join(dns_log_path, f)):

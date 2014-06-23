@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
 from log_to_mongo_lib import init_from_phishtank
 
+
 def init_from_csv(begin=1, end=10000):
     df = pd.read_csv('top-1m.csv', names=['rank', 'domain'], header=None, encoding='utf-8')
     return set(list(df[(df['rank'] <= end) & (df['rank'] >= begin)]['domain']))
@@ -17,10 +18,11 @@ def init_domain_set(f, domain_set):
 
 
 def get_list(_row, _class):
-    tmp = [_row["_id"], _row["number"], _row["idi"], _row["dps"]]
-    tmp.extend(_row["sdd"])
-    tmp.extend(_row["gro"])
-    tmp.extend(_row["ipi"])
+    tmp = [_row["_id"], _row["ip_count"], _row["p16_entropy"]]
+    tmp.extend(_row["relative"])
+    tmp.extend(_row["subdomain"])
+    tmp.extend(_row["growth"])
+    tmp.extend(_row["ipinfo"][1:])
     tmp.extend(_row["ttl"])
     tmp.append(_class)
     return tmp
@@ -44,7 +46,8 @@ def init_bot_domain():
     return sus_domain_set
 
 
-def a1(alpha1=9, alpha2=0.2, alpha3=12000, db_name="p140414"):
+# def a1(alpha1=9, alpha2=0.2, alpha3=12000, db_name="p140428"):
+def a1(alpha1=8, alpha2=0.3, alpha3=3000, db_name="p140430"):
     matrix = []
     m_num, l_num = 0, 0
     bot_domain_set = init_bot_domain()
@@ -54,38 +57,43 @@ def a1(alpha1=9, alpha2=0.2, alpha3=12000, db_name="p140414"):
         l_num += 1
         matrix.append(get_list(row, "legit"))
 
+    # matrix = [matrix[x] for x in np.random.randint(len(matrix), size=len(matrix)/5)]
+    # l_num = len(matrix)
+
     cursor = client[db_name]["sus_domain_matrix"].find()
     for row in cursor:
-        if row['_id'] not in bot_domain_set and row['number'] < alpha1 or row['idi'] < alpha2 or row['ttl'][0] > alpha3:
+        if row['_id'] not in bot_domain_set and \
+                        row['ip_count'] < alpha1 or row['p16_entropy'] < alpha2 or row['ttl'][0] > alpha3:
             continue
         m_num += 1
         matrix.append(get_list(row, "malware"))
 
-    if m_num < 200 or m_num/float(l_num) < 0.1:
+    if m_num < 200 or m_num/float(l_num) < 0.08:
+    # if m_num < 200:
         return [[0, 0], [0, 0]]
 
+    print l_num, m_num
     df = pd.DataFrame(matrix, columns=head)
     df = df.reindex(np.random.permutation(df.index))
-    X = df.as_matrix(head[:14])
+    X = df.as_matrix(head[:19])
     y = np.array(df["class"].tolist())
 
     # import sklearn.ensemble
+    # X = df.as_matrix(head[1:20])
     # clf = sklearn.ensemble.RandomForestClassifier(n_estimators=20)
     # scores = sklearn.cross_validation.cross_val_score(clf, X, y, cv=10, n_jobs=-1)
     # print scores
     # rdf = pd.DataFrame(scores, columns=["Precision"])
     # rdf.plot()
-
-    # importances = zip(head[1:14], clf.feature_importances_)
-    # print importances
+    # X = df.as_matrix(head[1:20])
 
     import sklearn.ensemble
     clf = sklearn.ensemble.RandomForestClassifier(n_estimators=20)
     from sklearn.cross_validation import train_test_split
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.4)
 
-    NX_train = [t[1: 14] for t in X_train]
-    NX_test = [t[1: 14] for t in X_test]
+    NX_train = [t[1: 19] for t in X_train]
+    NX_test = [t[1: 19] for t in X_test]
 
     clf.fit(NX_train, y_train)
     y_pred = clf.predict(NX_test)
@@ -114,12 +122,22 @@ def a1(alpha1=9, alpha2=0.2, alpha3=12000, db_name="p140414"):
     percent = (cm*100.0)/np.array(np.matrix(cm.sum(axis=1)).T)
     # t_matrix.append([percent[0][0], percent[1][1], db_name[1:]])
 
-    # if percent[0][0] > 90 and percent[1][1] > 80:
-    #     print m_num, l_num
-    #     print 'Confusion Matrix Stats'
-    #     for i, label_i in enumerate(labels):
-    #         for j, label_j in enumerate(labels):
-    #             print "%s/%s: %.2f%% (%d/%d)" % (label_i, label_j, (percent[i][j]), cm[i][j], cm[i].sum())
+    if percent[0][0] > 90 and percent[1][1] > 70:
+        print m_num, l_num
+        print 'Confusion Matrix Stats'
+        for i, label_i in enumerate(labels):
+            for j, label_j in enumerate(labels):
+                print "%s/%s: %.2f%% (%d/%d)" % (label_i, label_j, (percent[i][j]), cm[i][j], cm[i].sum())
+
+        importances = zip(head[1:20], clf.feature_importances_)
+        # print importances
+        for item in importances:
+            print item[0], item[1]
+            if item[0] not in importa:
+                importa[item[0]] = [item[1]]
+            else:
+                importa[item[0]].append(item[1])
+
     # fig = plt.figure()
     # ax = fig.add_subplot(111)
     # ax.grid(b=False)
@@ -132,6 +150,36 @@ def a1(alpha1=9, alpha2=0.2, alpha3=12000, db_name="p140414"):
     # pylab.ylabel('True')
     # pylab.show()
 
+    # matrix = []
+    # cursor = client[db_name]["domain_matrix"].find()
+    # for row in cursor:
+    #     matrix.append(get_list(row, "un"))
+    # # matrix = np.random.sample(matrix, 100)
+    # df = pd.DataFrame(matrix, columns=head)
+    # df = df.reindex(np.random.permutation(df.index))
+    # X = df.as_matrix(head[:19])
+    # X_test = [t[1: 19] for t in X]
+    #
+    # malware_count = {}
+    # for c in range(100):
+    #     y_pred = clf.predict(X_test)
+    #     for k in range(len(X)):
+    #         if y_pred[k] == 'malware':
+    #             if X[k][0] not in malware_count:
+    #                 malware_count[X[k][0]] = 1
+    #             else:
+    #                 malware_count[X[k][0]] += 1
+    #
+    # for key in malware_count:
+    #     if malware_count[key] > 0:
+    #         print key
+    #         res = client[db_name]['domain'].find_one({"_id": key})
+    #         print res
+    #         for sub in res["SUBDOMAINS"]:
+    #             print sub+"."+key
+    #         res = client[db_name]['domain_matrix'].find_one({"_id": key})
+    #         print res
+    # print percent
     return percent
 
 
@@ -152,8 +200,8 @@ def a2(db_name):
 
 
 def a3():
-    this_datetime = datetime(2014, 4, 2)
-    end_datetime = datetime(2014, 4, 26)
+    this_datetime = datetime(2014, 4, 20)
+    end_datetime = datetime(2014, 5, 1)
     while this_datetime < end_datetime:
         db_name = "p" + str(this_datetime.strftime("%y%m%d"))
         print db_name
@@ -167,24 +215,14 @@ def a3():
 
 client = MongoClient()
 matrix_list = ['domain', 'nor_domain', 'sus_domain']
-head = ["domain", "number", "ip_diversity", "domain_pool_stability",
-        "subdomain_number", "subdomain_diversity",
-        "ip_growth", "p16_growth", "subdomain_growth",
-        "min_ip_pool_stability", "max_ip_pool_stability", "max_dga",
-        "min_ttl", "max_ttl",
+head = ["domain", "ip_count", "p16_entropy",
+        "relative_domain_count", "unique_2ld_ratio", "unique_ip_ratio",
+        "subd_count", "subd_length_entropy",
+        "p16_growth_1", "p16_growth_4", "p16_growth_8",
+        "subd_growth_1", "subd_growth_4", "subd_growth_8",
+        "max_unique_domain_ratio", "max_dga_ratio",
+        "min_ttl", "max_ttl", "diff_ttl",
         "class"]
-
-fp = {}
-fn = {}
-
-f_matrix = []
-t_matrix = []
-
-# for m in range(50):
-#     print m
-#     a1(db_name="p140414")
-
-a3()
 
 
 def plot_false():
@@ -200,17 +238,59 @@ def plot_false():
                 print d, fn[d]
                 writer.write(d + "\n")
 
+#
+# df = pd.DataFrame(f_matrix, columns=head[1:15])
+# df = df[df['ip_count'] < 100]
+# df = df[df['subd_count'] < 100]
+# df.boxplot("ip_count", by='class')
+# pylab.show()
+#
+# df.boxplot(["p16_entropy", "p16_growth_1", "subd_growth_1", "min_unique_domain_ratio"], by='class')
+# pylab.show()
+#
+# df = df[df['min_ttl'] < 2000]
+# df = df[df['max_ttl'] < 2000]
+# df.boxplot(head[12: 14], by='class')
+# pylab.show()
 
-    df = pd.DataFrame(f_matrix, columns=head[1:15])
-    df = df[df['number'] < 100]
-    df = df[df['subdomain_number'] < 100]
-    df.boxplot("number", by='class')
-    pylab.show()
 
-    df.boxplot(["ip_diversity", "p16_growth", "subdomain_growth", "max_ip_pool_stability"], by='class')
-    pylab.show()
+fp = {}
+fn = {}
 
-    df = df[df['min_ttl'] < 2000]
-    df = df[df['max_ttl'] < 2000]
-    df.boxplot(head[12: 14], by='class')
-    pylab.show()
+f_matrix = []
+t_matrix = []
+
+# for m in range(50):
+#     print m
+#     a1(db_name="p140426")
+# plot_false()
+
+# a2("p140430")
+
+importa = {}
+for m in range(20):
+    a1()
+
+matrix = []
+
+importa_head = [
+        "subd_count", "subd_length_entropy",
+        "p16_growth_1", "p16_growth_4", "p16_growth_8",
+        "subd_growth_1", "subd_growth_4", "subd_growth_8",
+        "relative_domain_count", "unique_2ld_ratio", "unique_ip_ratio",
+        "max_unique_domain_ratio", "max_dga_ratio",
+        "ip_count", "p16_entropy", "min_ttl", "max_ttl", "diff_ttl"
+        ]
+
+for i in range(len(importa['ip_count'])):
+    tmp = []
+    for key in importa_head:
+        tmp.append(importa[key][i])
+    tmp.append(i+1)
+    matrix.append(tmp)
+importa_head.append("time")
+df = pd.DataFrame(matrix, columns=importa_head)
+df.plot(x='time', style=['+','o','*','.','x','s','d','^','v','>','<','p','h'])
+pylab.show()
+
+# a1()

@@ -1,6 +1,5 @@
 # FluxEnder README
 
-标签（空格分隔）： 未分类
 
 [Homepage][4] of this project. Learn some chinese, buddy.
 

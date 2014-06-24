@@ -2,6 +2,8 @@
 
 标签（空格分隔）： 未分类
 
+[Homepage][4] of this project. Learn some chinese, buddy.
+
 ---
 DIRs
 
@@ -69,6 +71,7 @@ in case you need help, **chenkainp@gmail.com**
 [1]: https://github.com/whodewho/FluxEnder
 [2]: http://pan.baidu.com/s/11sYFs
 [3]: https://github.com/gamelinux/passivedns
+[4]: http://www.kthinker.com/2014/06/01/Detection-of-Malicious-Domains-Based-on-Passive-DNS-Analysis/
 
 
 

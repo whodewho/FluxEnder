@@ -70,7 +70,7 @@ in case you need help, **chenkainp@gmail.com**
 [1]: https://github.com/whodewho/FluxEnder
 [2]: http://pan.baidu.com/s/11sYFs
 [3]: https://github.com/gamelinux/passivedns
-[4]: http://www.kthinker.com/2014/06/01/Detection-of-Malicious-Domains-Based-on-Passive-DNS-Analysis/
+[4]: http://kthinker.com/2014/06/01/detection-of-malicious-domains-based-on-passive-dns-analysis.html
 
 
 

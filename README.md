@@ -5,9 +5,27 @@ Malicious domains refers to websites that spread virus, worms and Trojan horses.
 To identify these malicious domains, this paper proposes a machine learning classifier based on random forests algorithm. I call it [FluxEnder][4].
 
 To identify these malicious domains, this paper proposes a machine learning classifier based on random forests algorithm. The major contribution are as follows:
+
 1. We propose a storage model based on TokuMX to store Passive DNS data. This model have high scalability, query speed and space utilization. It is optimized for analysis and it also supports reverse query on IP address.
+
 2. We build a malicious domain classifier from five aspects: diversity, time, growth, relatedness and IP info, consisting of 18 features. 7 of them are first time to be proposed by this paper. This paper bring up an idea called domain pool which describe the relation between domains. If several domains point to the same IP, they are in the same domain pool. Therefor, we can identify these domains with their group behavior. A malicious domain might use a malicious IP. In our learning model, we also use IP information, which is the info to judge the reliability of an IP. In addition, the model also take the DGA domain into consideration.
+
 3. We train and test the model on Peking University campus network’s DNS data, from March to April. Experimental results show that the detection accuracy is higher than 90%. Moreover, our proposed classifier outperforms the open source classifier called FluxBuster on campus network data of Peking University. On unlabeled data, this model also identify some malicious domains correctly.
+
+-----
+## Setup
+
+1. download [dns log][3] from [here][2]
+2. update malicious blocklist, find cdns names
+3. log to mongo
+4. extract feature
+5. classify model
+
+## Tuning
+
+* The malicious domains used(!!)
+* CDN names you use(!!)
+* Thresholds in classify_domain.py(!!!)
 
 ---
 ##DIRs
@@ -47,21 +65,6 @@ white\black\CDN domain lists
 * log_to_mongo.py: read log file, store into mongo
 * log_to_mongo_lib.py: imported by log_to_mongo.py
 * worker.py: the 'main()' for log_to_mongo and extract_feature (python, glue language)
-
------
-## Setup
-
-1. download [dns log][3] from [here][2]
-2. update malicious blocklist, find cdns names
-3. log to mongo
-4. extract feature
-5. classify model
-
-## Tuning
-
-* The malicious domains used(!!)
-* CDN names you use(!!)
-* Thresholds in classify_domain.py(!!!)
 
 ----
 

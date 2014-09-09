@@ -14,7 +14,7 @@ We propose a storage model based on TokuMX to store Passive DNS data. This model
 2. I suggest you update malicious blocklist and cdn domains lists in the /resources folder to make sure you have the latest legal and malware domains. These are supposed for noise deduction. The scripts in /scripts will help you in this part.
 3.  store the raw logs into TukuMX or mongoDB with /src/log\_to\_mongo.py and /src/log\_to\_mongo\_lib.py . you can run 'python log\_to\_mongo.py args1 args2', but I wrote a file called worker.py, this is a main entrance for both log to mongo and extraction, just two parts, comment the part you do not want to run.
 4.  extract features from mongoDB rows(part 3), in this part, it's easy to come up with something new and help your paper. read the /src/extract\_feature.py and /src/extract\_feature\_lib.py, you can get core ideas of FluxEnder in this two files. the I store the extracted features.
-5. this is about final classification, with the /src/classify\_domain.py, I use random forests tree from scikit-learn(thanks for the developers of these fancy tools), with labeled data, I train the model, and classify the test domain, and calculate the precision. you can read [dga hacking][5] here, it will help you understand. 
+5. this is about final classification, with the /src/classify\_domain.py, I use random forests tree from scikit-learn(thanks for the developers of these fancy tools), I train the model with labeled data, and then classify the test domain, calculate the precision. you can read [dga hacking][5] here, it will help you understand. 
 
 ## Tuning
 

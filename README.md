@@ -1,4 +1,4 @@
-#  FluxEnder
+#  [FluxEnder][4]
 
 Malicious domains refers to websites that spread virus, worms and Trojan horses. These sites are also usually related to fishing and pornography. These sites have been a serious threat to Internet user’s information and property safety. With the utilization of Fast-Flux and DGA technology, these sites turns to be more difficult to be tracked and taken down.
 
